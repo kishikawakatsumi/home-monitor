@@ -1,0 +1,17 @@
+{
+  "name": "home-monitor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "snowpack dev",
+    "build": "snowpack build"
+  },
+  "keywords": [],
+  "author": "kishikawa katsumi",
+  "license": "MIT",
+  "devDependencies": {
+    "@snowpack/plugin-dotenv": "^2.2.0",
+    "snowpack": "^3.8.8"
+  }
+}
