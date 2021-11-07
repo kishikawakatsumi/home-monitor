@@ -1,0 +1,48 @@
+"use strict";
+
+const baseUrl = "https://kishikawakatsumi-home.netlify.app/.netlify/functions";
+
+export function startReceivingMetrics() {
+  const metrics = async () => {
+    const co2 = await fetchCO2();
+    const temperature = await fetchTemparature();
+    const power = await fetchPower();
+    const humidity = await fetchHumidity();
+
+    document.getElementById("co2-value").innerHTML = co2.toFixed(0);
+    document.getElementById("temperature-value").innerHTML =
+      temperature.toFixed(1);
+    document.getElementById("power-value").innerHTML = power.toFixed(0);
+    document.getElementById("humidity-value").innerHTML = humidity.toFixed(0);
+  };
+  metrics();
+  setInterval(metrics, 10000);
+}
+
+async function fetchCO2() {
+  const response = await fetch(`${baseUrl}/co2`);
+  return (await response.json())["tsdbLatest"]["3PDMmFz2CKs"][
+    "custom.OfficeEnv.co2"
+  ]["value"];
+}
+
+async function fetchTemparature() {
+  const response = await fetch(`${baseUrl}/temperature`);
+  return (await response.json())["tsdbLatest"]["3PDMmFz2CKs"][
+    "custom.OfficeEnv.temp"
+  ]["value"];
+}
+
+async function fetchPower() {
+  const response = await fetch(`${baseUrl}/power`);
+  return (await response.json())["tsdbLatest"]["3PDMmFz2CKs"][
+    "custom.Home.power"
+  ]["value"];
+}
+
+async function fetchHumidity() {
+  const response = await fetch(`${baseUrl}/humidity`);
+  return (await response.json())["tsdbLatest"]["3PDMmFz2CKs"][
+    "custom.OfficeEnv.humidity"
+  ]["value"];
+}
