@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home Monitor</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+
+  <style>
+    video.loading {
+      background: transparent url(image/oval.svg) center center no-repeat;
+    }
+  </style>
+</head>
+
+<body>
+  <div style="height: 100vh;">
+    <section class="section" style="height: 100%;">
+      <div class="container" style="height: 100%;">
+        <div class="tile is-ancestor" style="height: 100%;">
+          <div class="tile is-parent is-vertical is-6" style="height: 100%;">
+            <div class="box has-background-light is-shadowless p-0" style="height: 100%;">
+              <video id="video-stream" style="width: 100%; height: 100%; border-radius: 6px; object-fit: contain;"
+                autoplay playsinline muted poster="data:image/gif,AAAA">
+              </video>
+              <div class="is-overlay">
+                <div class="tile is-vertical is-1">
+                  <div class="px-4 pt-5 pb-2">
+                    <button id="auth-button" class="button is-white" style="border-radius: 50%;">
+                      <span class="icon"><span class="fas fa-sign-in-alt"></span></span>
+                    </button>
+                  </div>
+                  <div class="px-4 py-2">
+                    <button id="generate-stream-button" class="button is-white" style="border-radius: 50%;" disabled>
+                      <span class="icon"><span class="fas fa-play"></span></span>
+                    </button>
+                    <button id="stop-stream-button" class="button is-white is-hidden" style="border-radius: 50%;">
+                      <span class="icon"><span class="fas fa-pause"></span></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tile is-parent is-vertical">
+            <div class="box has-background-primary-light is-shadowless">
+              <div class="columns is-mobile is-centered">
+                <div class="column is-half">
+                  <div class="has-text-centered">
+                    <span class="icon has-background-primary-light has-text-primary">
+                      <span class="fas fa-cloud fa-lg"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="columns is-mobile is-centered">
+                <div class="column is-half has-text-centered">
+                  <p class="title is-4">
+                    <span id="co2-value"></span>&nbsp;<span>ppm</span>
+                  </p>
+                  <p class="subtitle is-6 has-text-grey pt-1 pb-2">CO₂</p>
+                </div>
+              </div>
+            </div>
+            <div class="box has-background-danger-light is-shadowless">
+              <div class="columns is-mobile is-centered">
+                <div class="column is-half">
+                  <div class="has-text-centered">
+                    <span class="icon has-background-danger-light has-text-danger">
+                      <span class="fas fa-thermometer-half fa-lg"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="columns is-mobile is-centered">
+                <div class="column is-half has-text-centered">
+                  <p class="title is-4">
+                    <span id="temperature-value"></span>&nbsp;<span>°C</span>
+                  </p>
+                  <p class="subtitle is-6 has-text-grey pt-1 pb-2">Temperature</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tile is-parent is-vertical">
+            <div class="box has-background-warning-light is-shadowless">
+              <div class="columns is-mobile is-centered">
+                <div class="column is-half">
+                  <div class="has-text-centered">
+                    <span class="icon has-background-warning-light has-text-warning">
+                      <span class="fas fa-bolt fa-lg"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="columns is-mobile is-centered">
+                <div class="column is-half has-text-centered">
+                  <p class="title is-4">
+                    <span id="power-value"></span>&nbsp;<span>W</span>
+                  </p>
+                  <p class="subtitle is-6 has-text-grey pt-1 pb-2">Electricity</p>
+                </div>
+              </div>
+            </div>
+            <div class="box has-background-info-light is-shadowless">
+              <div class="columns is-mobile is-centered">
+                <div class="column is-half">
+                  <div class="has-text-centered">
+                    <span class="icon has-background-info-light has-text-info">
+                      <span class="fas fa-humidity fa-lg"></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="columns is-mobile is-centered">
+                <div class="column is-half has-text-centered">
+                  <p class="title is-4">
+                    <span id="humidity-value"></span>&nbsp;<span>%</span>
+                  </p>
+                  <p class="subtitle is-6 has-text-grey pt-1 pb-2">Humidity</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://kit.fontawesome.com/505df82d7e.js" crossorigin="anonymous"></script>
+  <script type="module" src="./index.js"></script>
+</body>
+
+</html>
