@@ -20,7 +20,10 @@ let localSendChannel;
 let localStream;
 let remoteStream;
 let offerSDP = "";
-let initialized = false;
+
+export function getOfferSDP() {
+  return offerSDP;
+}
 
 // WebRTC Configurations:
 
@@ -29,24 +32,15 @@ const localOfferOptions = {
   offerToReceiveAudio: 1,
 };
 
-const mediaStreamConstraints = {
-  audio: false,
-  video: false,
-};
-
 /// WebRTC Functions ///
 
 /** initializeWebRTC - Triggers starting a new WebRTC stream on initialization */
 export function initializeWebRTC() {
-  if (initialized === true) return;
-  console.log(`initializeWebRTC()`);
-  // initialized = true;
   startLocalStream();
 }
 
 /** startLocalStream - Starts a WebRTC stream on the browser */
 function startLocalStream(mediaStream) {
-  console.log(`startLocalStream()`);
   localPeerConnection = null;
   localSendChannel = null;
   localStream = null;
@@ -70,14 +64,12 @@ function startLocalStream(mediaStream) {
   if (mediaStream) {
     mediaStream.getTracks().forEach((track) => {
       localPeerConnection.addTrack(track, mediaStream);
-      console.log(`track added!`);
     });
     localStream = mediaStream;
   }
 
   localPeerConnection.addEventListener("track", gotRemoteMediaTrack);
 
-  console.log("localPeerConnection createOffer start.");
   localPeerConnection
     .createOffer(localOfferOptions)
     .then(createdOffer)
@@ -86,8 +78,6 @@ function startLocalStream(mediaStream) {
 
 /** createdOffer - Handles local offerSDP creation */
 function createdOffer(description) {
-  console.log(`createdOffer()`);
-  // updateOfferSDP(description.sdp);
   offerSDP = description.sdp;
   localPeerConnection
     .setLocalDescription(description)
@@ -99,7 +89,6 @@ function createdOffer(description) {
 
 /** updateWebRTC - Updates WebRTC connection on receiving answerSDP */
 export function updateWebRTC(answerSDP) {
-  console.log(`Answer from remotePeerConnection:\n${answerSDP}.`);
   if (answerSDP[answerSDP.length - 1] !== "\n") {
     answerSDP += "\n";
   }
@@ -116,7 +105,6 @@ export function updateWebRTC(answerSDP) {
 
 /** getPeerName - Handles received peer name */
 function getPeerName(peerConnection) {
-  console.log(`getPeerName()`);
   return peerConnection === localPeerConnection
     ? "localPeerConnection"
     : "remotePeerConnection";
@@ -124,50 +112,46 @@ function getPeerName(peerConnection) {
 
 /** gotRemoteMediaTrack - Handles received media track */
 function gotRemoteMediaTrack(event) {
-  console.log(`gotRemoteMediaTrack()`);
   remoteStream.addTrack(event.track);
 
   document.getElementById("video-stream").srcObject = remoteStream;
   document.getElementById("generate-stream-button").classList.add("is-hidden");
   document.getElementById("stop-stream-button").classList.remove("is-hidden");
-
-  console.log("Received remote track.");
 }
 
 /** receiveChannelCallback - Handles received channel callback */
 const receiveChannelCallback = (event) => {
-  console.log("receiveChannelCallback");
   const receiveChannel = event.channel;
   receiveChannel.onmessage = handleReceiveMessage;
 };
 
 /** setDescriptionSuccess - Handles received success description */
-function setDescriptionSuccess(peerConnection, functionName) {
-  console.log(`setDescriptionSuccess()`);
-  const peerName = getPeerName(peerConnection);
-  console.log(`${peerName} ${functionName} complete.`);
-}
+function setDescriptionSuccess(peerConnection, functionName) {}
 
 /** setLocalDescriptionSuccess - Handles received local success description */
 function setLocalDescriptionSuccess(peerConnection) {
-  console.log(`setLocalDescriptionSuccess()`);
   setDescriptionSuccess(peerConnection, "setLocalDescription");
+  const generateStreamButton = document.getElementById(
+    "generate-stream-button"
+  );
+  generateStreamButton.classList.remove("is-hidden");
+  generateStreamButton.removeAttribute("disabled");
+  generateStreamButton.click();
 }
 
 /** setRemoteDescriptionSuccess - Handles received remote success description */
 function setRemoteDescriptionSuccess(peerConnection) {
-  console.log(`setRemoteDescriptionSuccess()`);
   setDescriptionSuccess(peerConnection, "setRemoteDescription");
 }
 
 /** setSessionDescriptionError - Handles session description error */
 function setSessionDescriptionError(error) {
-  console.log(`Failed to create session description: ${error.toString()}.`);
+  console.error(`Failed to create session description: ${error.toString()}.`);
 }
 
 /** handleLocalMediaStreamError - Handles media stream error */
 function handleLocalMediaStreamError(error) {
-  console.log(`navigator.getUserMedia error: ${error.toString()}.`);
+  console.error(`navigator.getUserMedia error: ${error.toString()}.`);
 }
 
 /** handleReceiveMessage - Handles receiving message */
@@ -178,7 +162,6 @@ const handleReceiveMessage = (event) => {
 /** handleConnectionChange - Handles connection change */
 function handleConnectionChange(event) {
   if (event.target) {
-    console.log(`ICE connection state: ${event.target.iceConnectionState}`);
     switch (event.target.iceConnectionState) {
       case "connected":
         const generateStreamButton = document.getElementById(
@@ -206,8 +189,4 @@ function handleConnectionChange(event) {
     const stopStreamButton = document.getElementById("stop-stream-button");
     stopStreamButton.classList.add("is-hidden");
   }
-}
-
-export function getOfferSDP() {
-  return offerSDP;
 }

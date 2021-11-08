@@ -4,18 +4,21 @@ const baseUrl = "https://kishikawakatsumi-home.netlify.app/.netlify/functions";
 
 export function startReceivingMetrics() {
   const metrics = async () => {
-    const co2 = await fetchCO2();
-    const temperature = await fetchTemparature();
-    const power = await fetchPower();
-    const humidity = await fetchHumidity();
+    try {
+      const co2 = await fetchCO2();
+      const temperature = await fetchTemparature();
+      const power = await fetchPower();
+      const humidity = await fetchHumidity();
 
-    document.getElementById("co2-value").innerHTML = co2.toFixed(0);
-    document.getElementById("temperature-value").innerHTML =
-      temperature.toFixed(1);
-    document.getElementById("power-value").innerHTML = power.toFixed(0);
-    document.getElementById("humidity-value").innerHTML = humidity.toFixed(0);
+      document.getElementById("co2-value").innerHTML = co2.toFixed(0);
+      document.getElementById("temperature-value").innerHTML =
+        temperature.toFixed(1);
+      document.getElementById("power-value").innerHTML = power.toFixed(0);
+      document.getElementById("humidity-value").innerHTML = humidity.toFixed(0);
+    } catch {}
   };
   metrics();
+
   setInterval(metrics, 10000);
 }
 

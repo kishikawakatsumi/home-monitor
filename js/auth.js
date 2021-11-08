@@ -1,39 +1,43 @@
 "use strict";
 
+import { Credential } from "./credential";
+
+const CLIENT_ID = import.meta.env.SNOWPACK_PUBLIC_CLIENT_ID;
+const CLIENT_SECRET = import.meta.env.SNOWPACK_PUBLIC_CLIENT_SECRET;
+export const PROJECT_ID = import.meta.env.SNOWPACK_PUBLIC_PROJECT_ID;
+
 const TOKEN_ENDPOINT = "https://www.googleapis.com/oauth2/v4/token";
 const OAUTH_SCOPE = "https://www.googleapis.com/auth/sdm.service";
 
-const selectedEndpoint = "https://nestservices.google.com/partnerconnections/";
-
-const clientId = import.meta.env.SNOWPACK_PUBLIC_CLIENT_ID;
-const clientSecret = import.meta.env.SNOWPACK_PUBLIC_CLIENT_SECRET;
-const projectId = import.meta.env.SNOWPACK_PUBLIC_PROJECT_ID;
-
 let oauthCode = "";
-let accessToken = localStorage["accessToken"];
-let refreshToken = localStorage["refreshToken"];
+
+export function sharedCredential() {
+  const accessToken = localStorage["accessToken"];
+  const refreshToken = localStorage["refreshToken"];
+  return new Credential(accessToken, refreshToken);
+}
 
 export function signIn() {
-  const redirectURI = window.location.origin + "/";
-  const oauthEndpoint = selectedEndpoint + projectId + "/auth";
+  const endpoint = `https://nestservices.google.com/partnerconnections/${PROJECT_ID}/auth`;
+  const redirectUri = window.location.origin + "/";
 
   const form = document.createElement("form");
   form.setAttribute("method", "GET");
-  form.setAttribute("action", oauthEndpoint);
+  form.setAttribute("action", endpoint);
 
   const params = {
     access_type: "offline",
-    client_id: clientId,
+    client_id: CLIENT_ID,
     include_granted_scopes: "true",
     prompt: "consent",
-    redirect_uri: redirectURI,
+    redirect_uri: redirectUri,
     response_type: "code",
     scope: OAUTH_SCOPE,
     state: "pass-through value",
   };
 
-  for (let p in params) {
-    let input = document.createElement("input");
+  for (const p in params) {
+    const input = document.createElement("input");
     input.setAttribute("type", "hidden");
     input.setAttribute("name", p);
     input.setAttribute("value", params[p]);
@@ -53,6 +57,7 @@ export function handleAuth() {
       return;
     }
     updateOAuthCode(code);
+
     window.history.pushState("object or string", "Title", "/");
     resolve();
   });
@@ -60,17 +65,18 @@ export function handleAuth() {
 
 export function exchangeCode() {
   return new Promise(function (resolve, reject) {
-    if (accessToken || !oauthCode) {
+    const credential = sharedCredential();
+    if (credential.accessToken || !oauthCode) {
       resolve();
       return;
     }
 
-    const redirectURI = window.location.origin + "/";
+    const redirectURI = `${window.location.origin}/`;
 
     const payload = {
       code: oauthCode,
-      client_id: clientId,
-      client_secret: clientSecret,
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
       redirect_uri: redirectURI,
       grant_type: "authorization_code",
     };
@@ -79,17 +85,17 @@ export function exchangeCode() {
     xhr.open("POST", TOKEN_ENDPOINT);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 
-    xhr.onload = function () {
+    xhr.onload = () => {
       if (xhr.status === 200) {
         const parsedResponse = JSON.parse(xhr.responseText);
         updateAccessToken(parsedResponse.access_token);
         updateRefreshToken(parsedResponse.refresh_token);
-        // updateSignedIn(true);
+
         resolve();
       } else {
-        updateAccessToken(undefined);
-        updateRefreshToken(undefined);
-        // updateSignedIn(false);
+        updateAccessToken(null);
+        updateRefreshToken(null);
+
         resolve();
       }
     };
@@ -100,15 +106,16 @@ export function exchangeCode() {
 
 export function refreshAccess() {
   return new Promise(function (resolve, reject) {
-    if (!refreshToken) {
+    const credential = sharedCredential();
+    if (!credential.refreshToken) {
       resolve();
       return;
     }
 
     const payload = {
-      refresh_token: refreshToken,
-      client_id: clientId,
-      client_secret: clientSecret,
+      refresh_token: credential.refreshToken,
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
       grant_type: "refresh_token",
     };
 
@@ -116,7 +123,7 @@ export function refreshAccess() {
     xhr.open("POST", TOKEN_ENDPOINT);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 
-    xhr.onload = function () {
+    xhr.onload = () => {
       if (xhr.status === 200) {
         const parsedResponse = JSON.parse(xhr.responseText);
         updateAccessToken(parsedResponse.access_token);
@@ -138,20 +145,11 @@ function updateOAuthCode(value) {
 }
 
 function updateAccessToken(value) {
-  console.log("updateAccessToken", value);
-  accessToken = value;
+  const accessToken = value;
   localStorage["accessToken"] = accessToken;
 }
 
 function updateRefreshToken(value) {
-  refreshToken = value;
+  const refreshToken = value;
   localStorage["refreshToken"] = refreshToken;
-}
-
-export function getAccessToken() {
-  return accessToken;
-}
-
-export function getProjectId() {
-  return projectId;
 }

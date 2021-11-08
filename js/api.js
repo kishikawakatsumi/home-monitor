@@ -1,38 +1,25 @@
 "use strict";
 
-import { getAccessToken, getProjectId } from "./auth";
+import { sharedCredential, PROJECT_ID } from "./auth";
+import { Device } from "./device";
 import { initializeWebRTC, updateWebRTC, getOfferSDP } from "./webrtc";
 
-let accessToken = getAccessToken();
-let projectId = getProjectId();
-
-class Device {
-  constructor(id, type, name, structure, traits) {
-    this.id = id;
-    this.type = type;
-    this.name = name;
-    this.structure = structure;
-    this.traits = traits;
-  }
-}
-
-let selectedDevice = new Device(
-  "AVPHwEvwRHksnBhU3vgudAUX06VA7xdpZyYZZUseIVmdm38CnGhcqYx64_tm3q7EVHFFLZMhXUCx2sRy8jTIZ0mw9YWLX-Y",
-  null,
-  null,
-  null,
-  null
-);
-let streamExtensionToken = "";
+const devices = [];
+let selectedDevice = null;
 let mediaSessionId = "";
 
-const selectedAPI = "https://smartdevicemanagement.googleapis.com/v1";
-
-/** deviceAccessRequest - Issues requests to Device Access Rest API */
 function deviceAccessRequest(method, call, localpath, payload = "") {
-  let xhr = new XMLHttpRequest();
-  xhr.open(method, selectedAPI + localpath);
-  xhr.setRequestHeader("Authorization", "Bearer " + accessToken);
+  const credential = sharedCredential();
+  if (!credential.accessToken || !credential.refreshToken) {
+    return;
+  }
+
+  const xhr = new XMLHttpRequest();
+  xhr.open(
+    method,
+    `https://smartdevicemanagement.googleapis.com/v1${localpath}`
+  );
+  xhr.setRequestHeader("Authorization", `Bearer ${credential.accessToken}`);
   xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
 
   xhr.onload = function () {
@@ -50,46 +37,39 @@ function deviceAccessRequest(method, call, localpath, payload = "") {
   }
 }
 
-/** deviceAccessResponse - Parses responses from Device Access API calls */
 function deviceAccessResponse(method, call, response) {
-  let data = JSON.parse(response);
-  // Check if response data is empty:
+  const data = JSON.parse(response);
   if (!data) {
     return;
   }
-  // Based on the original request call, interpret the response:
+
   switch (call) {
     case "listDevices":
-      // clearDevices(); // Clear the previously detected devices.
-
-      // Check for detected devices:
       if (!data.devices) {
         return;
       }
 
-      // Iterate over detected devices:
       for (let i = 0; i < data.devices.length; i++) {
-        // Parse Device Id:
-        let scannedId = data.devices[i].name;
-        let startIndexId = scannedId.lastIndexOf("/");
-        let deviceId = scannedId.substring(startIndexId + 1);
-        // Parse Device Type:
-        let scannedType = data.devices[i].type;
-        let startIndexType = scannedType.lastIndexOf(".");
+        const scannedId = data.devices[i].name;
+        const startIndexId = scannedId.lastIndexOf("/");
+        const deviceId = scannedId.substring(startIndexId + 1);
+
+        const scannedType = data.devices[i].type;
+        const startIndexType = scannedType.lastIndexOf(".");
         let deviceType = scannedType.substring(startIndexType + 1);
-        // Parse Device Structure:
-        let scannedAssignee = data.devices[i].assignee;
-        let startIndexStructure = scannedAssignee.lastIndexOf("/structures/");
-        let endIndexStructure = scannedAssignee.lastIndexOf("/rooms/");
-        let deviceStructure = scannedAssignee.substring(
+
+        const scannedAssignee = data.devices[i].assignee;
+        const startIndexStructure = scannedAssignee.lastIndexOf("/structures/");
+        const endIndexStructure = scannedAssignee.lastIndexOf("/rooms/");
+        const deviceStructure = scannedAssignee.substring(
           startIndexStructure + 12,
           endIndexStructure
         );
 
-        // Handle special case for Displays (Skip, no support!)
-        if (deviceType === "DISPLAY") continue;
+        if (deviceType === "DISPLAY") {
+          continue;
+        }
 
-        // Handle special case for Thermostats (Read Temperature Unit)
         if (deviceType === "THERMOSTAT") {
           let tempScale =
             data.devices[i].traits["sdm.devices.traits.Settings"]
@@ -103,20 +83,18 @@ function deviceAccessResponse(method, call, response) {
           }
         }
 
-        // Parse Device Room:
         let scannedName =
           data.devices[i].traits["sdm.devices.traits.Info"].customName;
         let scannedRelations = data.devices[i].parentRelations;
         let scannedRoom = scannedRelations[0]["displayName"];
-        // Parse Device Name:
+
         let deviceName =
           scannedName !== ""
             ? scannedName
             : scannedRoom + " " + stringFormat(deviceType);
-        // Parse Device Traits:
+
         let deviceTraits = Object.keys(data.devices[i].traits);
 
-        // WebRTC check:
         let traitCameraLiveStream =
           data.devices[i].traits["sdm.devices.traits.CameraLiveStream"];
 
@@ -124,30 +102,110 @@ function deviceAccessResponse(method, call, response) {
           let supportedProtocols = traitCameraLiveStream.supportedProtocols;
           if (supportedProtocols && supportedProtocols.includes("WEB_RTC")) {
             deviceType += "-webrtc";
-            initializeWebRTC();
           }
         }
 
-        // addDevice(
-        // new Device(
-        //   deviceId,
-        //   deviceType,
-        //   deviceName,
-        //   deviceStructure,
-        //   deviceTraits
-        // )
-        // );
-        selectedDevice = new Device(
-          deviceId,
-          deviceType,
-          deviceName,
-          deviceStructure,
-          deviceTraits
+        addDevice(
+          new Device(
+            deviceId,
+            deviceType,
+            deviceName,
+            deviceStructure,
+            deviceTraits
+          )
         );
       }
+
+      selectedDevice = devices.find((device) => {
+        if (device.type === "DOORBELL-webrtc") {
+          return device;
+        }
+      });
+      if (selectedDevice) {
+        const dropdown = document.createElement("div");
+        dropdown.classList.add("dropdown", "is-hoverable");
+
+        const dropdownTrigger = document.createElement("div");
+        dropdownTrigger.classList.add("dropdown-trigger");
+
+        const button = document.createElement("button");
+        button.classList.add("button", "is-warning", "is-light");
+        button.setAttribute("aria-haspopup", "true");
+        button.setAttribute("aria-controls", "dropdown-menu");
+
+        const title = document.createElement("span");
+        title.classList.add("title", "is-4");
+
+        const value = document.createElement("span");
+        value.textContent = selectedDevice.name;
+
+        title.appendChild(value);
+        button.appendChild(title);
+        dropdownTrigger.appendChild(button);
+        dropdown.appendChild(dropdownTrigger);
+
+        const dropdownMenu = document.createElement("div");
+        dropdownMenu.classList.add("dropdown-menu");
+        dropdownMenu.setAttribute("id", "dropdown-menu");
+        dropdownMenu.setAttribute("role", "menu");
+
+        const dropdownContent = document.createElement("div");
+        dropdownContent.classList.add("dropdown-content");
+
+        const dropdownItemTypeTitle = document.createElement("div");
+        dropdownItemTypeTitle.classList.add("dropdown-item");
+
+        const dropdownItemType = document.createElement("div");
+        dropdownItemType.classList.add("dropdown-item");
+
+        const typeTitle = document.createElement("span");
+        typeTitle.classList.add("has-text-grey", "is-size-7");
+        typeTitle.textContent = "Type";
+        dropdownItemTypeTitle.appendChild(typeTitle);
+
+        const type = document.createElement("span");
+        type.classList.add("is-size-6", "pl-4");
+        type.textContent = selectedDevice.type;
+        dropdownItemType.appendChild(type);
+
+        const divider = document.createElement("hr");
+        divider.classList.add("dropdown-divider");
+
+        const dropdownItemTraitTitle = document.createElement("div");
+        dropdownItemTraitTitle.classList.add("dropdown-item");
+
+        const traitTitle = document.createElement("span");
+        traitTitle.classList.add("has-text-grey", "is-size-7");
+        traitTitle.textContent = "Trait";
+        dropdownItemTraitTitle.appendChild(traitTitle);
+
+        dropdownContent.appendChild(dropdownItemTypeTitle);
+        dropdownContent.appendChild(dropdownItemType);
+        dropdownContent.appendChild(divider);
+        dropdownContent.appendChild(dropdownItemTraitTitle);
+
+        for (const trait of selectedDevice.traits) {
+          const dropdownItemTrait = document.createElement("div");
+          dropdownItemTrait.classList.add("dropdown-item");
+
+          const t = document.createElement("span");
+          t.classList.add("is-size-6", "pl-4");
+          t.textContent = trait;
+          dropdownItemTrait.appendChild(t);
+
+          dropdownContent.appendChild(dropdownItemTrait);
+        }
+
+        dropdown.appendChild(dropdownMenu);
+        dropdownMenu.appendChild(dropdownContent);
+
+        document.getElementById("device-values").appendChild(dropdown);
+
+        initializeWebRTC();
+      }
+
       break;
     case "listStructures":
-      console.log("List Structures!");
       break;
     case "generateStream":
       console.log("Generate Stream!");
@@ -170,193 +228,39 @@ function deviceAccessResponse(method, call, response) {
       else document.getElementById("btnFanMode").textContent = "Activate Fan";
       break;
     case "thermostatMode":
-      console.log("Thermostat Mode!");
       break;
     case "temperatureSetpoint":
-      console.log("Temperature Setpoint!");
       break;
     default:
       break;
   }
 }
 
-/** openResourcePicker - Opens Resource Picker on a new browser tab */
-function openResourcePicker() {
-  window.open(selectedResourcePicker);
+function addDevice(device) {
+  devices.push(device);
 }
 
-/// Device Access API ///
-
-/** onListDevices - Issues a ListDevices request */
 export function onListDevices() {
-  let endpoint = "/enterprises/" + projectId + "/devices";
+  const endpoint = `/enterprises/${PROJECT_ID}/devices`;
   deviceAccessRequest("GET", "listDevices", endpoint);
 }
 
-/** onListStructures - Issues a ListStructures request */
 export function onListStructures() {
-  let endpoint = "/enterprises/" + projectId + "/structures";
+  const endpoint = `/enterprises/${PROJECT_ID}/structures`;
   deviceAccessRequest("GET", "listStructures", endpoint);
 }
 
-/** onFan - Issues a FanMode change request */
-export function onFan() {
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  // Construct the payload:
-  let payload = {
-    command: "sdm.devices.commands.Fan.SetTimer",
-    params: {},
-  };
-  // Set correct FanMode based on the current selection:
-  switch (document.getElementById("btnFanMode").textContent) {
-    case "Activate Fan":
-      payload.params["timerMode"] = "ON";
-      payload.params["duration"] = "3600s";
-      break;
-    case "Deactivate Fan":
-      payload.params["timerMode"] = "OFF";
-      break;
-    default:
-      return;
-  }
-  deviceAccessRequest("POST", "fanMode", endpoint, payload);
-}
-
-/** onThermostatMode - Issues a ThermostatMode request */
-export function onThermostatMode() {
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  let tempMode = document.getElementById("sctThermostatMode").value;
-  let payload = {
-    command: "sdm.devices.commands.ThermostatMode.SetMode",
-    params: {
-      mode: tempMode,
-    },
-  };
-  deviceAccessRequest("POST", "thermostatMode", endpoint, payload);
-}
-
-/** onTemperatureSetpoint - Issues a TemperatureSetpoint request */
-export function onTemperatureSetpoint() {
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  let heatCelsius = parseFloat(
-    document.getElementById("txtHeatTemperature").value
-  );
-  let coolCelsius = parseFloat(
-    document.getElementById("txtCoolTemperature").value
-  );
-  // Convert temperature values based on temperature unit:
-  if (document.getElementById("heatUnit").innerText === "°F") {
-    heatCelsius = ((heatCelsius - 32) * 5) / 9;
-  }
-  if (document.getElementById("coolUnit").innerText === "°F") {
-    coolCelsius = ((coolCelsius - 32) * 5) / 9;
-  }
-  // Construct the payload:
-  let payload = {
-    command: "",
-    params: {},
-  };
-  // Set correct temperature fields based on the selected ThermostatMode:
-  switch (document.getElementById("sctThermostatMode").value) {
-    case "HEAT":
-      payload.command =
-        "sdm.devices.commands.ThermostatTemperatureSetpoint.SetHeat";
-      payload.params["heatCelsius"] = heatCelsius;
-      break;
-    case "COOL":
-      payload.command =
-        "sdm.devices.commands.ThermostatTemperatureSetpoint.SetCool";
-      payload.params["coolCelsius"] = coolCelsius;
-      break;
-    case "HEATCOOL":
-      payload.command =
-        "sdm.devices.commands.ThermostatTemperatureSetpoint.SetRange";
-      payload.params["heatCelsius"] = heatCelsius;
-      payload.params["coolCelsius"] = coolCelsius;
-      break;
-    default:
-      return;
-  }
-  deviceAccessRequest("POST", "temperatureSetpoint", endpoint, payload);
-}
-
-/** onGenerateStream - Issues a GenerateRtspStream request */
-export function onGenerateStream() {
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  let payload = {
-    command: "sdm.devices.commands.CameraLiveStream.GenerateRtspStream",
-  };
-  deviceAccessRequest("POST", "generateStream", endpoint, payload);
-}
-
-/** onExtendStream - Issues a ExtendRtspStream request */
-export function onExtendStream() {
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  let payload = {
-    command: "sdm.devices.commands.CameraLiveStream.ExtendRtspStream",
-    params: {
-      streamExtensionToken: streamExtensionToken,
-    },
-  };
-  deviceAccessRequest("POST", "refreshStream", endpoint, payload);
-}
-
-/** onStopStream - Issues a StopRtspStream request */
-function onStopStream() {
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  let payload = {
-    command: "sdm.devices.commands.CameraLiveStream.StopRtspStream",
-    params: {
-      streamExtensionToken: streamExtensionToken,
-    },
-  };
-  deviceAccessRequest("POST", "stopStream", endpoint, payload);
-}
-
-/** onGenerateStream_WebRTC - Issues a GenerateWebRtcStream request */
 export function onGenerateStream_WebRTC() {
+  if (!selectedDevice) {
+    return;
+  }
   let offerSDP = getOfferSDP();
   if (!offerSDP.includes("a=recvonly")) {
     offerSDP = `${offerSDP}a=recvonly`;
   }
-  console.log(offerSDP);
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  let payload = {
+
+  const endpoint = `/enterprises/${PROJECT_ID}/devices/${selectedDevice.id}:executeCommand`;
+  const payload = {
     command: "sdm.devices.commands.CameraLiveStream.GenerateWebRtcStream",
     params: {
       offer_sdp: offerSDP,
@@ -366,32 +270,12 @@ export function onGenerateStream_WebRTC() {
   deviceAccessRequest("POST", "generateStream", endpoint, payload);
 }
 
-/** onExtendStream_WebRTC - Issues a ExtendWebRtcStream request */
-export function onExtendStream_WebRTC() {
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  let payload = {
-    command: "sdm.devices.commands.CameraLiveStream.ExtendWebRtcStream",
-    params: {
-      mediaSessionId: streamExtensionToken,
-    },
-  };
-  deviceAccessRequest("POST", "refreshStream", endpoint, payload);
-}
-
-/** onStopStream_WebRTC - Issues a StopWebRtcStream request */
 export function onStopStream_WebRTC() {
-  let endpoint =
-    "/enterprises/" +
-    projectId +
-    "/devices/" +
-    selectedDevice.id +
-    ":executeCommand";
-  let payload = {
+  if (!selectedDevice || !mediaSessionId) {
+    return;
+  }
+  const endpoint = `/enterprises/${PROJECT_ID}/devices/${selectedDevice.id}:executeCommand`;
+  const payload = {
     command: "sdm.devices.commands.CameraLiveStream.StopWebRtcStream",
     params: {
       mediaSessionId,
