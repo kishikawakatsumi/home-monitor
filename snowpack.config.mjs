@@ -1,9 +1,10 @@
 export default {
   exclude: [
-    "**/node_modules/**/*",
     "**/.github/**/*",
+    "**/node_modules/**/*",
     "**/package.json",
     "**/package-lock.json",
+    "**/README.md",
   ],
   plugins: ["@snowpack/plugin-dotenv"],
 };
