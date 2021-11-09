@@ -1,8 +1,14 @@
 "use strict";
 
+import { sharedCredential } from "./auth";
+
 const baseUrl = "https://kishikawakatsumi-home.netlify.app/.netlify/functions";
 
 export function startReceivingMetrics() {
+  const credential = sharedCredential();
+  if (!credential.accessToken || !credential.refreshToken) {
+    return;
+  }
   const metrics = async () => {
     try {
       const co2 = await fetchCO2();
