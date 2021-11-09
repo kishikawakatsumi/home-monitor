@@ -10,6 +10,7 @@ let mediaSessionId = "";
 
 function deviceAccessRequest(method, call, localpath, payload = "") {
   const credential = sharedCredential();
+  console.log(credential);
   if (!credential.accessToken || !credential.refreshToken) {
     return;
   }
