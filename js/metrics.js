@@ -19,7 +19,7 @@ export function startReceivingMetrics() {
   };
   metrics();
 
-  setInterval(metrics, 10000);
+  setInterval(metrics, 60_000);
 }
 
 async function fetchCO2() {
