@@ -9,7 +9,6 @@ import { signIn, handleAuth, exchangeCode, refreshAccess } from "./js/auth";
 import { startReceivingMetrics } from "./js/metrics";
 
 init();
-onListDevices();
 
 const authButton = document.getElementById("auth-button");
 authButton.addEventListener("click", signIn);
@@ -45,4 +44,5 @@ async function init() {
   await handleAuth();
   await exchangeCode();
   await refreshAccess();
+  onListDevices();
 }
