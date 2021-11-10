@@ -107,7 +107,6 @@ export function exchangeCode() {
 export function refreshAccess() {
   return new Promise(function (resolve, reject) {
     const credential = sharedCredential();
-    console.log(credential);
     if (!credential.refreshToken) {
       resolve();
       return;
@@ -127,7 +126,6 @@ export function refreshAccess() {
     xhr.onload = () => {
       if (xhr.status === 200) {
         const parsedResponse = JSON.parse(xhr.responseText);
-        console.log(parsedResponse);
         updateAccessToken(parsedResponse.access_token);
         resolve();
       } else {
