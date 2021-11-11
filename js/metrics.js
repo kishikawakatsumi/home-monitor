@@ -25,7 +25,7 @@ export function startReceivingMetrics() {
   };
   metrics();
 
-  setInterval(metrics, 60_000);
+  setInterval(metrics, 20_000);
 }
 
 async function fetchCO2() {
