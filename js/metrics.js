@@ -2,7 +2,7 @@
 
 import { sharedCredential } from "./auth";
 
-const baseUrl = "https://kishikawakatsumi-home.netlify.app/.netlify/functions";
+const endpoint = "https://home.kishikawakatsumi.workers.dev";
 
 export function startReceivingMetrics() {
   const credential = sharedCredential();
@@ -29,28 +29,28 @@ export function startReceivingMetrics() {
 }
 
 async function fetchCO2() {
-  const response = await fetch(`${baseUrl}/co2`);
+  const response = await fetch(`${endpoint}/co2`);
   return (await response.json())["tsdbLatest"]["3PDMmFz2CKs"][
     "custom.OfficeEnv.co2"
   ]["value"];
 }
 
 async function fetchTemparature() {
-  const response = await fetch(`${baseUrl}/temperature`);
+  const response = await fetch(`${endpoint}/temperature`);
   return (await response.json())["tsdbLatest"]["3PDMmFz2CKs"][
     "custom.OfficeEnv.temp"
   ]["value"];
 }
 
 async function fetchPower() {
-  const response = await fetch(`${baseUrl}/power`);
+  const response = await fetch(`${endpoint}/power`);
   return (await response.json())["tsdbLatest"]["3PDMmFz2CKs"][
     "custom.Home.power"
   ]["value"];
 }
 
 async function fetchHumidity() {
-  const response = await fetch(`${baseUrl}/humidity`);
+  const response = await fetch(`${endpoint}/humidity`);
   return (await response.json())["tsdbLatest"]["3PDMmFz2CKs"][
     "custom.OfficeEnv.humidity"
   ]["value"];
