@@ -51,6 +51,7 @@ export function signIn() {
 export function handleAuth() {
   return new Promise(function (resolve, reject) {
     const searchParams = new URLSearchParams(window.location.search);
+    console.log(window.location);
     console.log(searchParams);
     const code = searchParams.get("code");
     if (!code) {
