@@ -6,6 +6,10 @@ const CLIENT_ID = import.meta.env.SNOWPACK_PUBLIC_CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.SNOWPACK_PUBLIC_CLIENT_SECRET;
 export const PROJECT_ID = import.meta.env.SNOWPACK_PUBLIC_PROJECT_ID;
 
+console.log(CLIENT_ID);
+console.log(CLIENT_SECRET);
+console.log(PROJECT_ID);
+
 const TOKEN_ENDPOINT = "https://www.googleapis.com/oauth2/v4/token";
 const OAUTH_SCOPE = "https://www.googleapis.com/auth/sdm.service";
 
