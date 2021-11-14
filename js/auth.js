@@ -51,6 +51,7 @@ export function signIn() {
 export function handleAuth() {
   return new Promise(function (resolve, reject) {
     const searchParams = new URLSearchParams(window.location.search);
+    console.log(searchParams);
     const code = searchParams.get("code");
     if (!code) {
       resolve();
@@ -90,6 +91,7 @@ export function exchangeCode() {
         const parsedResponse = JSON.parse(xhr.responseText);
         updateAccessToken(parsedResponse.access_token);
         updateRefreshToken(parsedResponse.refresh_token);
+        console.log(parsedResponse);
 
         resolve();
       } else {
