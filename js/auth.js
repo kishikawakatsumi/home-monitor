@@ -67,7 +67,7 @@ export function exchangeCode() {
   return new Promise(function (resolve, reject) {
     const credential = sharedCredential();
     const accessToken = credential.accessToken;
-    if (accessToken) {
+    if (accessToken !== null) {
       console.log(`accessToken exists: ${accessToken}`);
       resolve();
       return;
