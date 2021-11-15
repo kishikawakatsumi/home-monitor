@@ -52,7 +52,6 @@ export function handleAuth() {
   return new Promise(function (resolve, reject) {
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
-    console.log(code);
     if (!code) {
       resolve();
       return;
@@ -67,14 +66,13 @@ export function handleAuth() {
 export function exchangeCode() {
   return new Promise(function (resolve, reject) {
     const credential = sharedCredential();
-    console.log(credential.accessToken);
-    console.log(oauthCode);
     if (credential.accessToken || !oauthCode) {
       resolve();
       return;
     }
 
     const redirectURI = `${window.location.origin}/`;
+    console.log(redirectURI);
 
     const payload = {
       code: oauthCode,
