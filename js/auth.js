@@ -49,6 +49,7 @@ export function signIn() {
 }
 
 export function handleAuth() {
+  console.log("handleAuth()");
   return new Promise(function (resolve, reject) {
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
@@ -64,6 +65,7 @@ export function handleAuth() {
 }
 
 export function exchangeCode() {
+  console.log("exchangeCode()");
   return new Promise(function (resolve, reject) {
     const credential = sharedCredential();
     console.log(credential.accessToken);
@@ -144,6 +146,7 @@ export function refreshAccess() {
 }
 
 function updateOAuthCode(value) {
+  console.log(`updateOAuthCode() ${value}`);
   oauthCode = value;
   localStorage["oauthCode"] = oauthCode;
 }
