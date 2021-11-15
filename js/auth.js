@@ -71,8 +71,6 @@ export function exchangeCode() {
     }
 
     const redirectURI = `${window.location.origin}/`;
-    console.log(redirectURI);
-
     const payload = {
       code: oauthCode,
       client_id: CLIENT_ID,
