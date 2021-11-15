@@ -19,7 +19,7 @@ export function sharedCredential() {
 
 export function signIn() {
   const endpoint = `https://nestservices.google.com/partnerconnections/${PROJECT_ID}/auth`;
-  const redirectUri = window.location.origin + "/";
+  const redirectUri = `${window.location.origin}/`;
 
   const form = document.createElement("form");
   form.setAttribute("method", "GET");
@@ -50,9 +50,9 @@ export function signIn() {
 
 export function handleAuth() {
   return new Promise(function (resolve, reject) {
+    console.log(window.location.search);
+    console.log(`${window.location}`);
     const searchParams = new URLSearchParams(window.location.search);
-    console.log(window.location);
-    console.log(searchParams);
     const code = searchParams.get("code");
     if (!code) {
       resolve();
