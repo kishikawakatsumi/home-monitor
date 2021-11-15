@@ -66,6 +66,8 @@ export function handleAuth() {
 export function exchangeCode() {
   return new Promise(function (resolve, reject) {
     const credential = sharedCredential();
+    console.log(credential.accessToken);
+    console.log(oauthCode);
     if (credential.accessToken || !oauthCode) {
       resolve();
       return;
