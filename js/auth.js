@@ -90,7 +90,6 @@ export function exchangeCode() {
         const parsedResponse = JSON.parse(xhr.responseText);
         updateAccessToken(parsedResponse.access_token);
         updateRefreshToken(parsedResponse.refresh_token);
-        console.log(parsedResponse);
 
         resolve();
       } else {
