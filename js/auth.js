@@ -49,7 +49,6 @@ export function signIn() {
 }
 
 export function handleAuth() {
-  console.log("handleAuth()");
   return new Promise(function (resolve, reject) {
     const searchParams = new URLSearchParams(window.location.search);
     const code = searchParams.get("code");
@@ -65,12 +64,13 @@ export function handleAuth() {
 }
 
 export function exchangeCode() {
-  console.log("exchangeCode()");
   return new Promise(function (resolve, reject) {
     const credential = sharedCredential();
     console.log(credential.accessToken);
     console.log(oauthCode);
+    console.log(credential.accessToken || !oauthCode);
     if (credential.accessToken || !oauthCode) {
+      console.log("fail");
       resolve();
       return;
     }
@@ -146,7 +146,6 @@ export function refreshAccess() {
 }
 
 function updateOAuthCode(value) {
-  console.log(`updateOAuthCode() ${value}`);
   oauthCode = value;
   localStorage["oauthCode"] = oauthCode;
 }
