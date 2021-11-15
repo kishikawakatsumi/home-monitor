@@ -66,10 +66,13 @@ export function handleAuth() {
 export function exchangeCode() {
   return new Promise(function (resolve, reject) {
     const credential = sharedCredential();
-    console.log(`credential.accessToken: ${credential.accessToken}`);
-    console.log(`!oauthCode: ${!oauthCode}`);
-    console.log(!!(credential.accessToken || !oauthCode));
-    if (!!(credential.accessToken || !oauthCode)) {
+    if (credential.accessToken) {
+      console.log(`credential.accessToken exists: ${credential.accessToken}`);
+      resolve();
+      return;
+    }
+    if (!oauthCode) {
+      console.log(`oauthCode does not exist: ${oauthCode}`);
       resolve();
       return;
     }
