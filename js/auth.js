@@ -68,7 +68,7 @@ export function exchangeCode() {
     const credential = sharedCredential();
     const accessToken = credential.accessToken;
     if (accessToken) {
-      console.log(`credential.accessToken exists: ${credential.accessToken}`);
+      console.log(`accessToken exists: ${accessToken}`);
       resolve();
       return;
     }
